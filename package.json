@@ -7,16 +7,23 @@
     "dev": "vite --host 0.0.0.0",
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0",
-    "test": "node tests/smoke.cjs"
+    "test": "npm run test:db && npm run test:edge && npm run test:ui",
+    "test:db": "node tests/database.mjs",
+    "test:ui": "node tests/cloud-smoke.cjs",
+    "provision": "node scripts/provision-users.mjs",
+    "test:edge": "node tests/edge.mjs"
   },
   "dependencies": {
     "@fontsource/dm-sans": "^5.3.0",
     "@fontsource/manrope": "^5.3.0",
+    "@supabase/supabase-js": "^2.118.0",
     "lucide-react": "^0.468.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.10",
+    "esbuild": "^0.28.2",
     "playwright": "^1.64.1",
     "vite": "^6.1.0"
   }

@@ -1,0 +1,5 @@
+project_id = "themelio"
+
+[functions.manage-members]
+# User JWT is explicitly validated with auth.getUser before every admin operation.
+verify_jwt = false
