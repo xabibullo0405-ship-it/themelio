@@ -16,6 +16,12 @@ Frontend uchun to‘g‘ri URL: `https://pumkmcpekrbshcvfojim.supabase.co` — `
 
 **Fayllarning repozitoriyda mavjudligi ularning Supabase’da o‘rnatilganini anglatmaydi. Quyidagi amallar haqiqiy loyiha administratori kirishini talab qiladi. Public/publishable kalit bunga yetmaydi.**
 
+## Qisman o‘rnatilgan bazani tiklash
+
+Agar `function "is_director" already exists` yoki oldingi bajarishda `public.members does not exist` xatosi chiqqan bo‘lsa, SQL Editor’da **yangi so‘rov** oching va `scripts/repair-schema.sql` faylini to‘liq bajaring. Unda asosiy jadvallar ham, kamera rasmlari uchun Storage sozlamalari ham bor. Mavjud hisob va hisobot yozuvlari o‘chirilmaydi; faqat Themelio’ning nomlangan funksiyalari, triggeri va siyosatlari qayta o‘rnatiladi. Ushbu sxemada faylni qayta bajarish mumkin.
+
+Natijada `status = Baza tayyor`, `accounts` va `director_accounts` chiqadi. `director_accounts = 0` bo‘lsa, direktor hisobi hali yo‘q: parolni yangilash skripti hisob yaratmaydi. Hisob yaratish bosqichini bajaring. Bu tiklash usuli ma’lum Themelio sxemasi uchun; bir xil nomli, boshqa tuzilishdagi jadvallar bo‘lsa, ularni o‘chirmang va xatoni tekshiring.
+
 ## 1. Jadvallarni yarating
 
 Supabase Dashboard → loyihangiz → **SQL Editor → New query**.
