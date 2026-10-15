@@ -1,0 +1,32 @@
+import {PGlite} from '@electric-sql/pglite';
+import {readFile} from 'node:fs/promises';
+import assert from 'node:assert/strict';
+const db=new PGlite();
+await db.exec(`create role anon;create role authenticated;create role service_role bypassrls;
+create schema auth;create schema extensions;
+create table auth.users(instance_id uuid,id uuid primary key,aud text,role text,email text unique,encrypted_password text,email_confirmed_at timestamptz,raw_app_meta_data jsonb,raw_user_meta_data jsonb,created_at timestamptz,updated_at timestamptz,confirmation_token text,recovery_token text,email_change_token_new text,email_change text,email_change_token_current text,reauthentication_token text);
+create table auth.identities(id uuid primary key,provider_id text,user_id uuid references auth.users,identity_data jsonb,provider text,created_at timestamptz,updated_at timestamptz,unique(provider_id,provider));
+create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;
+create function extensions.gen_random_bytes(int) returns bytea language sql as $$select decode(repeat('ab',24),'hex')$$;
+create function extensions.gen_salt(text) returns text language sql as $$select 'fixture-salt'::text$$;
+create function extensions.crypt(text,text) returns text language sql as $$select 'fixture-hash-'||$1$$;
+`);
+await db.exec(await readFile('supabase/migrations/202610150001_initial.sql','utf8'));
+const script=await readFile('scripts/create-director.sql','utf8');
+let result=await db.exec(script);
+const row=result.at(-1).rows[0];assert.equal(row.login,'direktor');assert.equal(row.new_password.length,48);
+assert.equal((await db.query("select count(*)::int n from public.members where app_role='director'")).rows[0].n,1);
+const user=(await db.query('select * from auth.users')).rows[0];assert.equal(user.raw_app_meta_data.themelio_role,'director');assert(user.email_confirmed_at);assert(user.encrypted_password.startsWith('fixture-hash-'));
+assert.equal((await db.query('select user_id from auth.identities')).rows[0].user_id,user.id);
+result=await db.exec(script);assert.equal(result.at(-1).rows[0].new_password,null,'Rerun preserves existing director password');
+assert.equal((await db.query('select count(*)::int n from auth.users')).rows[0].n,1);
+// Recover the canonical email if Auth existed before the schema was installed.
+await db.exec('delete from public.members;delete from auth.identities');
+result=await db.exec(script);assert.equal(result.at(-1).rows[0].login,'direktor');
+assert.equal((await db.query('select id from auth.users')).rows[0].id,user.id);
+// Never promote an existing employee using the reserved login/email.
+await db.exec("update public.members set app_role='employee'");
+await assert.rejects(db.exec(script),/boshqa xodimga tegishli/);
+assert.equal((await db.query('select app_role from public.members')).rows[0].app_role,'employee');
+console.log('Director bootstrap SQL verified: new Auth user + identity + profile, repeat safety, orphan recovery and employee protection. Crypto was stubbed; hosted Auth login remains unverified.');
+await db.close();

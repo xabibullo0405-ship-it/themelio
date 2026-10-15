@@ -49,6 +49,16 @@ npx supabase@latest login
 npx supabase@latest functions deploy manage-members --project-ref pumkmcpekrbshcvfojim --no-verify-jwt
 ```
 
+## SQL Editor orqali birinchi direktor hisobini tiklash
+
+Agar `repair-schema.sql` natijasida `director_accounts = 0` chiqsa va Auth Admin API bilan ishlash uchun server kaliti muhitga uzatilmayotgan bo‘lsa, loyiha administratori SQL Editor’da `scripts/create-director.sql` faylini **to‘liq** bajarishi mumkin.
+
+Bu administrator uchun tiklash skripti: `auth.users`, email `auth.identities` va Themelio profilini yaratadi. Login `direktor`, tasodifiy parol esa oxirgi **Results → new_password** ustunida ko‘rinadi. Parolni xavfsiz saqlang. Mavjud direktor topilsa, uning paroli o‘zgartirilmaydi; parol yo‘qolgan bo‘lsa `scripts/reset-director.sql` ishlatiladi. Ushbu fayllar frontendga qo‘shilmaydi va ommaviy RPC yaratmaydi.
+
+Bu usul standart Supabase Auth sxemasi va `extensions` sxemasidagi pgcrypto funksiyalariga mo‘ljallangan. SQL sxemasi mahalliy modelda tekshirilgan; haqiqiy Auth kirishi SQL bajarilgandan keyin tekshiriladi. Kundalik yangi xodimlar uchun rasmiy Auth Admin API’ni ishlatuvchi Edge Function afzal.
+
+Birinchi direktor kirgach, qolgan 9 ta xodim lavozimini kabinet orqali bittadan yaratishi mumkin. Bu bilan dastlabki xodimlar parollari direktorning tegishli oynasida ko‘rsatiladi.
+
 ## 3. Dastlabki 10 ta hisobni yarating
 
 Bu amalni ishonchli lokal terminalda yoki shu cloud muhitda bajaring. Kerakli administrator kaliti: Supabase **Project Settings → API Keys → service_role / server secret key**. Public/publishable kalitni ishlatmang.
