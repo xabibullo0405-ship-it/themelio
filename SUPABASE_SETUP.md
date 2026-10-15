@@ -20,7 +20,7 @@ Frontend uchun to‘g‘ri URL: `https://pumkmcpekrbshcvfojim.supabase.co` — `
 
 Supabase Dashboard → loyihangiz → **SQL Editor → New query**.
 
-`supabase/migrations/202610150001_initial.sql` faylining to‘liq matnini ko‘chirib, **Run** bosing. Bu bir martalik, tranzaksiyali migratsiya. Shu nomdagi jadvallar oldin bo‘lsa, ustiga qayta ishga tushirmang; holatni avval tekshiring.
+`supabase/migrations/202610150001_initial.sql` faylining to‘liq matnini ko‘chirib, **Run** bosing. Keyin alohida so‘rovda `supabase/migrations/202610150002_report_photos.sql` faylini bajaring. Agar birinchi migratsiya oldin bajarilgan bo‘lsa, uni qaytarmang — faqat ikkinchisini bajaring. Bu bir martalik, tranzaksiyali migratsiya. Shu nomdagi jadvallar oldin bo‘lsa, ustiga qayta ishga tushirmang; holatni avval tekshiring.
 
 Migratsiya Auth foydalanuvchisi yaratilganda `members` yozuvini avtomatik yaratadigan trigger o‘rnatadi. `app_role` va `position` faqat administrator bergan `app_metadata`dan olinadi. Oddiy signup yoki profil formasi direktor rolini bera olmaydi.
 
@@ -92,10 +92,25 @@ SQL bazasi, Auth hisoblari va Edge Function o‘rnatilmaguncha ushbu haqiqiy tek
 
 ## Chegaralar va test dalillari
 
-- Matnli hisobot almashish tayyor; PDF/rasm biriktirish va Storage hali qo‘shilmagan.
+- Kamera orqali olingan JPEG rasmlar hisobotga qo‘shiladi. Har bir hisobotga 5 tagacha, har bir rasm 5 MB gacha. Galereya/fayl tanlash yo‘q. PDF yuklash hali qo‘shilmagan.
 - Loyiha bitta kompaniyaga mo‘ljallangan. Bir nechta kompaniya uchun alohida tenant va RLS qoidalari kerak.
 - Savdo va obyekt boshqaruvi hozircha bo‘sh interfeys holatida.
 - `test:db` — aynan SQL migratsiyasini PGlite/PostgreSQL’da bajarib RLS, rollar, 10 hisob limiti, hisobotlar, topshiriqlar va xabarlar ruxsatlarini tekshiradi.
 - `test:edge` — Edge handlerni mock Auth Admin API bilan tekshiradi.
 - `test:ui` — Supabase HTTP javoblarini mock qilib haqiqiy brauzerda ikki mustaqil sessiya oqimini tekshiradi. Haqiqiy Supabase loyihasiga ulanmaydi.
 - Cloud test muhitida Supabase domeniga dastlabki so‘rovlar proxy tomonidan `403 Forbidden` bilan rad etilgan. Domen muhit konfiguratsiyasi loyihasiga qo‘shilgan; bu joriy tarmoq allaqachon ochilganini bildirmaydi.
+
+## Faqat kameradan rasmli hisobot
+
+`202610150002_report_photos.sql` migratsiyasi `report-photos` nomli **yopiq** Storage bucket va rasmlarni hisobotga biriktirish funksiyasini yaratadi.
+
+- Xodim faol profil bilan kiradi, **Kamerani ochish → Rasmga olish** tugmalaridan foydalanadi. Brauzerga kamera ruxsati berilishi kerak. Telefonning orqa kamerasi afzal tanlanadi; kameralarni almashtirish ham bor.
+- Qurilma kamerasidan `getUserMedia` orqali olinadi; galereya uchun `input[type=file]` mavjud emas. Kamera uchun HTTPS yoki localhost kerak. Haqiqiy telefonlarda kamera ruxsatlari va brauzer qo‘llab-quvvatlashini tekshiring.
+- Rasm JPEG sifatida maksimal 1920 pikselga moslanadi. Yuborishdan oldin preview ko‘rinadi; ortiqcha rasmni o‘chirish mumkin.
+- Kamera surat olingach, oyna yopilgach yoki sahifa yashirilgach to‘xtatiladi. Mikrofon so‘ralmaydi.
+- Fayllar faqat xodimning UUID papkasiga yuklanadi. Xodim o‘z rasmlarini, direktor esa yuborilgan hisobotga biriktirilgan rasmlarni ko‘radi. Boshqa xodimlar ko‘ra olmaydi. Bucket ommaviy emas.
+- Rasm ko‘rish uchun 10 daqiqalik vaqtinchalik havola yaratiladi. Ochiq sahifada havolalar yangilanadi. Hisobotga biriktirilgan rasmlarni xodim almashtira yoki o‘chira olmaydi.
+- Yuborishda xatolik bo‘lsa, tanlangan rasmlar va matn formadan o‘chmaydi. Yuklangan qoralamalarni tozalashga urinish qilinadi. Ulanish to‘liq uzilsa, yuborilmagan fayl bucketda qolishi mumkin; keyinchalik administrator qoralamalarni tozalashi mumkin.
+- Har bir yuborishning UUIDsi bor: server javobi yo‘qolganidan keyin qayta urinish bir xil hisobotni takror yaratmaydi.
+
+Mahalliy baza testlari Storage jadvallari modeli bilan haqiqiy SQL siyosatlarini bajaradi; brauzer testi sun’iy kamera va mock Supabase Storage javoblarini ishlatadi. Haqiqiy Supabase Storage va jismoniy telefondagi kamera tekshiruvi migratsiya o‘rnatilgandan keyin alohida bajariladi.

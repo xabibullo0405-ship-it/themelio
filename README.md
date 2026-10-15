@@ -17,7 +17,7 @@ Ishchi papka: `/workspace/themelio`. Production: `npm run build`, natija `dist/`
 
 **[SUPABASE_SETUP.md](SUPABASE_SETUP.md)** qo‘llanmasini bajaring:
 
-1. SQL Editor’da `supabase/migrations/202610150001_initial.sql` migratsiyasini bajaring.
+1. SQL Editor’da `supabase/migrations/202610150001_initial.sql` migratsiyasini bajaring, so‘ng `supabase/migrations/202610150002_report_photos.sql` migratsiyasini bajaring.
 2. `supabase/functions/manage-members/index.ts` Edge Function’ni joylashtiring.
 3. Server kaliti bilan `npm run provision` bajarib 1 direktor + 9 xodim hisobini yarating. Parollar faqat Git’dan chiqarilgan `.private/` fayliga yoziladi.
 4. Saytda login, profil, hisobot yuborish va tasdiqlashni ikki qurilmada tekshiring.
@@ -31,12 +31,12 @@ Eski mahalliy brauzer hisoblari serverga avtomatik ko‘chirilmaydi. Supabase o�
 - Supabase login/parol va sessiya; rol bazadan aniqlanadi.
 - Jami 10 hisob chegarasi, direktor boshqaradigan lavozim va login-parol yaratish.
 - Xodim profilini o‘zi to‘ldiradi; yakunlangach direktor ro‘yxatida ko‘rinadi.
-- Matnli ertalabki/yakuniy hisobotlar, sana filtri, direktor tasdig‘i, CSV eksport.
+- Ertalabki/yakuniy hisobotlar, faqat kamerada olingan rasmlar (5 tagacha), sana filtri, direktor tasdig‘i va CSV eksport. Rasmlar yopiq Supabase Storage bucketida saqlanadi.
 - Direktor topshiriq biriktiradi, xodim bajarilish foizini yangilaydi.
 - Direktorning xodimga xabar yuborishi, xabarlar uchun bazada shaxsiy ruxsatlar.
 - Mobil ko‘rinish, qidiruv, arxiv, profil, bildirishnomalar.
 
-PDF/rasm yuklash, obyektlar va sotuvlarni serverda boshqarish hali ulanmagan.
+Galereyadan rasm tanlash yo‘q. PDF yuklash, obyektlar va sotuvlarni serverda boshqarish hali ulanmagan.
 
 ## Testlar
 
