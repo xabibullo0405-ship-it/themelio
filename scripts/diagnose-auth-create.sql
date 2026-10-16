@@ -13,6 +13,7 @@ declare
  v_message text;
  v_context text;
  v_triggers text;
+ v_role_warning text:='';
 begin
  select string_agg(n.nspname||'.'||p.proname,', ' order by t.tgname) into v_triggers
  from pg_trigger t join pg_proc p on p.oid=t.tgfoid join pg_namespace n on n.oid=p.pronamespace
@@ -20,7 +21,11 @@ begin
  -- Auth normally hashes in its server process, so prepare this before assuming its DB role.
  v_hash:=extensions.crypt(encode(extensions.gen_random_bytes(24),'hex'),extensions.gen_salt('bf'));
  begin
-  execute 'set local role supabase_auth_admin';
+  begin
+   execute 'set local role supabase_auth_admin';
+  exception when insufficient_privilege then
+   v_role_warning:=' SQL Editor Auth roliga o‘tishga ruxsat bermadi; tekshiruv SQL Editor roli bilan bajarildi, Auth ruxsatlari tekshirilmadi.';
+  end;
   insert into auth.users(instance_id,id,aud,role,email,encrypted_password,email_confirmed_at,
                         raw_app_meta_data,raw_user_meta_data,created_at,updated_at,
                         confirmation_token,recovery_token,email_change_token_new,email_change,
@@ -39,11 +44,11 @@ begin
  end;
  if v_code='PZ001' and v_message='THEMELIO_PROBE_ROLLBACK' then
   return query select 'OK'::text,
-   'Sinov yozuvi va triggerlar ishladi. Sinov hisobi saqlanmadi; Auth server logidagi boshqa bosqichni tekshirish kerak.'::text,
+   ('Sinov yozuvi va triggerlar ishladi. Sinov hisobi saqlanmadi. Auth logidagi xatoni tekshiring.'||v_role_warning)::text,
    null::text,v_triggers;
  else
   -- Do not return SQL details, row data, hashes or complete function definitions.
-  return query select v_code,v_message,substring(v_context from 'function ([^\n]+)'),v_triggers;
+  return query select v_code,v_message||v_role_warning,substring(v_context from 'function ([^\n]+)'),v_triggers;
  end if;
 end;
 $$;
