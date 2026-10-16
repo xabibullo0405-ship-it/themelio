@@ -31,6 +31,12 @@ for(const code of ['weak_password','unexpected_failure','email_address_invalid']
 }
 authError={code:'weak_password',status:422};
 assert.equal((await (await request('director',{action:'reset-password',id:'employee-id'})).json()).error_code,'weak_password');
+authError={status:500,message:'Database error creating new user'};
+const fallback=await (await request('director',{action:'create',position:'Prorab'})).json();
+assert.equal(fallback.error_code,'auth_error');assert(fallback.error.includes('Database error creating new user'));assert(fallback.error.includes('HTTP 500'));
+authError={status:400,message:'credential fixture-only sb_secret_example eyJabc.def.signature'};
+const safe=await (await request('director',{action:'create',position:'Prorab'})).json();
+assert(!safe.error.includes('fixture-only'));assert(!safe.error.includes('sb_secret_example'));assert(!safe.error.includes('eyJabc.def.signature'));
 authError=null;
 assert.equal((await request('director',null)).status,400);
 console.log('Edge handler tests passed with mocked Auth Admin API: missing/invalid JWT, employee denial, 10-seat preflight, fixed employee role, password creation, director reset denial, employee reset, strict password policy, actionable Auth errors, invalid request validation and no-store responses.');
