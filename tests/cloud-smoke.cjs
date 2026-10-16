@@ -6,7 +6,7 @@ const now=new Date().toISOString();
 const date=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Tashkent',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
 const director='00000000-0000-4000-8000-000000000001',employee='00000000-0000-4000-8000-000000000002';
 const member=(id,app_role,login,position)=>({id,app_role,login,position,name:'',phone:'',contact_email:'',address:'',birth_date:null,status:'pending',created_at:now});
-let failNextUpload=false;let photoRequests=0;
+let failNextUpload=false;let photoRequests=0;let failInvitation=true;
 const state={members:[member(director,'director','direktor','Direktor'),member(employee,'employee','xodim01','Muhandis')],reports:[],tasks:[],messages:[]};
 const jwt=id=>[Buffer.from(JSON.stringify({alg:'HS256',typ:'JWT'})).toString('base64url'),Buffer.from(JSON.stringify({sub:id,role:'authenticated',aud:'authenticated',exp:Math.floor(Date.now()/1000)+3600})).toString('base64url'),'fixture-signature'].join('.');
 const authId=req=>{try{return JSON.parse(Buffer.from(req.headers()['authorization'].split('.')[1],'base64url')).sub}catch{return null}};
@@ -47,6 +47,7 @@ try{
   }
   if(path==='/functions/v1/manage-members'){
    if(me.app_role!=='director')return send({error:'Director required'},403);
+   if(failInvitation){failInvitation=false;return send({error:'Supabase parol talabi bajarilmadi.',error_code:'weak_password'},400)}
    const account=member(crypto.randomUUID(),'employee','tm-fixture','Hisobchi');state.members.push(account);
    return send({account:{id:account.id,login:account.login,role:account.position,status:'pending'},password:'fixture-password'});
   }
@@ -64,7 +65,7 @@ try{
  await login(d,'direktor','incorrect');await d.getByRole('alert').waitFor();await login(d,'direktor');
  await d.getByRole('heading',{name:'Hisobotlar.',exact:true}).waitFor();
  await d.getByRole('button',{name:'Xodimlar',exact:true}).click();assert.equal(await d.locator('.pending-row').count(),1);assert.equal(await d.locator('.person-card').count(),0);
- await d.getByRole('button',{name:'Lavozim yaratish',exact:true}).click();await d.getByRole('combobox',{name:'Lavozim nomi'}).fill('Hisobchi');await d.getByRole('button',{name:'Login-parol yaratish',exact:true}).click();await d.getByRole('heading',{name:'Lavozim yaratildi',exact:true}).waitFor();await d.getByRole('button',{name:'Saqlab oldim'}).click();assert.equal(await d.locator('.pending-row').count(),2);
+ await d.getByRole('button',{name:'Lavozim yaratish',exact:true}).click();await d.getByRole('combobox',{name:'Lavozim nomi'}).fill('Hisobchi');await d.getByRole('button',{name:'Login-parol yaratish',exact:true}).click();await d.getByRole('alert').filter({hasText:'[weak_password]'}).waitFor();assert.equal(await d.getByRole('combobox',{name:'Lavozim nomi'}).inputValue(),'Hisobchi');await d.getByRole('button',{name:'Login-parol yaratish',exact:true}).click();await d.getByRole('heading',{name:'Lavozim yaratildi',exact:true}).waitFor();await d.getByRole('button',{name:'Saqlab oldim'}).click();assert.equal(await d.locator('.pending-row').count(),2);
  const {page:e}=await setup();await e.goto(base);await login(e,'xodim01');await e.getByRole('heading',{name:'Shaxsiy ma’lumotlar',exact:true}).waitFor();
  assert.equal(await e.getByRole('button',{name:'Lavozim yaratish',exact:true}).count(),0);
  await e.getByRole('textbox',{name:'Ism va familiya',exact:true}).fill('Sinov Xodimi');await e.getByRole('textbox',{name:'Telefon raqami'}).fill('+998901234567');await e.getByRole('textbox',{name:'Elektron pochta',exact:true}).fill('test@example.com');await e.getByRole('textbox',{name:'Yashash manzili'}).fill('Sinov manzili');await e.getByRole('button',{name:'Profilni yakunlash'}).click();await e.getByRole('heading',{name:'Jamoaga qo‘shildingiz!'}).waitFor();

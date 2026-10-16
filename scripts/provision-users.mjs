@@ -19,7 +19,7 @@ await mkdir(dirname(output),{recursive:true,mode:0o700});
 await writeFile(output,JSON.stringify({project:url,accounts:credentials},null,2),{mode:0o600,flag:'wx'});
 const persist=()=>writeFile(output,JSON.stringify({project:url,accounts:credentials},null,2),{mode:0o600});
 const create=async(login,appRole,position)=>{
- const password=randomBytes(24).toString('base64url');
+ const password='Aa2!'+randomBytes(24).toString('base64url');
  const {data,error}=await admin.auth.admin.createUser({email:login+'@accounts.themelio.invalid',password,email_confirm:true,app_metadata:{themelio_role:appRole,login,position}});
  if(error||!data.user){await persist();throw new Error('Account creation failed; already-created credentials are retained. Check the Supabase Auth logs and seat limit.')}
  credentials.push({login,password,role:appRole,position});await persist();

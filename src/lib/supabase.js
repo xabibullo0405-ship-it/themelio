@@ -6,7 +6,7 @@ export const supabase=createClient(supabaseUrl,supabaseKey,{auth:{persistSession
 export const loginEmail=(login)=>login.includes('@')?login.trim().toLowerCase():login.trim().toLowerCase()+'@accounts.themelio.invalid';
 export async function manageMember(body){
  const {data,error}=await supabase.functions.invoke('manage-members',{body});
- if(error){let message='Hisob yaratilmadi. Server funksiyasi va ruxsatlarni tekshiring.';try{message=(await error.context.json()).error||message}catch{}throw new Error(message)}
+ if(error){let message='Hisob yaratilmadi. Server funksiyasi va ruxsatlarni tekshiring.';try{const detail=await error.context.json();message=detail.error||message;if(typeof detail.error_code==='string'&&/^[a-z0-9_]{1,80}$/.test(detail.error_code))message+=' ['+detail.error_code+']'}catch{}throw new Error(message)}
  if(data?.error)throw new Error(data.error);
  return data;
 }

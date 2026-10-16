@@ -3,6 +3,28 @@ const cors = {'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'
 const reply=(status:number,body:unknown)=>new Response(JSON.stringify(body),{status,headers:{...cors,'Content-Type':'application/json','Cache-Control':'no-store'}});
 const alphabet='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
 const random=(length:number)=>Array.from(crypto.getRandomValues(new Uint8Array(length)),n=>alphabet[n%alphabet.length]).join('');
+// Satisfy upper/lower/digit/symbol policies, not merely a probabilistic mix.
+const newPassword=()=>{
+ const chars=[...'Aa2!'+random(20)];
+ for(let i=chars.length-1;i>0;i--){const j=crypto.getRandomValues(new Uint32Array(1))[0]%(i+1);[chars[i],chars[j]]=[chars[j],chars[i]]}
+ return chars.join('');
+};
+const authFailure=(error:{code?:string;status?:number},operation:string)=>{
+ const code=error.code&&/^[a-z0-9_]{1,80}$/.test(error.code)?error.code:'auth_error';
+ const hints:Record<string,string>={
+  weak_password:'Supabase parol talabi bajarilmadi. Auth parol sozlamalarini tekshiring.',
+  validation_failed:'Supabase hisob ma’lumotini qabul qilmadi. Auth logidagi tafsilotni tekshiring.',
+  email_address_invalid:'Supabase login uchun email manzilini rad etdi. Auth logini tekshiring.',
+  email_exists:'Bu login bilan hisob mavjud. Boshqa login yarating.',
+  user_already_exists:'Bu login bilan hisob mavjud. Boshqa login yarating.',
+  unexpected_failure:'Auth bazaga yozishda xato qaytardi. Supabase Logs → Auth bo‘limida shu vaqtdagi xatoni tekshiring.',
+  not_admin:'Server kalitida Auth administrator huquqi yo‘q. Edge Function sozlamalarini tekshiring.'
+ };
+ const requestId=crypto.randomUUID();
+ // Log only operational metadata, never passwords, tokens, keys or the request body.
+ console.error(JSON.stringify({event:'themelio_auth_failure',operation,code,status:error.status,request_id:requestId}));
+ return reply(code==='unexpected_failure'?503:400,{error:hints[code]||'Supabase hisob amalini bajara olmadi. Auth logini tekshiring.',error_code:code,request_id:requestId});
+};
 Deno.serve(async(req:Request)=>{
  if(req.method==='OPTIONS')return new Response('ok',{headers:cors});
  if(req.method!=='POST')return reply(405,{error:'POST required'});
@@ -14,11 +36,12 @@ Deno.serve(async(req:Request)=>{
  const {data:actor,error:actorError}=await admin.from('members').select('app_role').eq('id',user.id).single();
  if(actorError||actor?.app_role!=='director')return reply(403,{error:'Faqat direktor hisob yarata oladi.'});
  let body;try{body=await req.json()}catch{return reply(400,{error:'Invalid JSON'})}
+ if(!body||typeof body!=='object'||Array.isArray(body))return reply(400,{error:'Invalid JSON object'});
  if(body.action==='reset-password'){
   const {data:member}=await admin.from('members').select('id,login,position,status,app_role').eq('id',body.id).single();
   if(!member||member.app_role!=='employee')return reply(404,{error:'Xodim topilmadi.'});
-  const password=random(18),{error}=await admin.auth.admin.updateUserById(member.id,{password});
-  if(error)return reply(400,{error:'Parolni yangilab bo‘lmadi.'});
+  const password=newPassword(),{error}=await admin.auth.admin.updateUserById(member.id,{password});
+  if(error)return authFailure(error,'reset-password');
   return reply(200,{account:{id:member.id,login:member.login,role:member.position,status:member.status},password});
  }
  if(body.action!=='create')return reply(400,{error:'Unknown operation'});
@@ -27,8 +50,9 @@ Deno.serve(async(req:Request)=>{
  const {count,error:countError}=await admin.from('members').select('id',{count:'exact',head:true});
  if(countError)return reply(503,{error:'Baza tayyor emas. SQL migratsiyasini tekshiring.'});
  if((count||0)>=10)return reply(409,{error:'10 ta hisob chegarasiga yetildi (1 direktor + 9 xodim).'});
- const login='tm-'+random(10).toLowerCase(),password=random(18);
+ const login='tm-'+random(10).toLowerCase(),password=newPassword();
  const {data,error}=await admin.auth.admin.createUser({email:login+'@accounts.themelio.invalid',password,email_confirm:true,app_metadata:{themelio_role:'employee',position,login}});
- if(error||!data.user)return reply(400,{error:'Hisob yaratilmadi. Hisoblar soni va Auth sozlamalarini tekshiring.'});
+ if(error)return authFailure(error,'create');
+ if(!data.user)return reply(503,{error:'Auth foydalanuvchi ma’lumotini qaytarmadi.',error_code:'missing_user'});
  return reply(200,{account:{id:data.user.id,login,role:position,status:'pending'},password});
 });

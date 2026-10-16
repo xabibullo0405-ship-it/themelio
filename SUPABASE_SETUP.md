@@ -130,3 +130,22 @@ SQL bazasi, Auth hisoblari va Edge Function o‘rnatilmaguncha ushbu haqiqiy tek
 - Har bir yuborishning UUIDsi bor: server javobi yo‘qolganidan keyin qayta urinish bir xil hisobotni takror yaratmaydi.
 
 Mahalliy baza testlari Storage jadvallari modeli bilan haqiqiy SQL siyosatlarini bajaradi; brauzer testi sun’iy kamera va mock Supabase Storage javoblarini ishlatadi. Haqiqiy Supabase Storage va jismoniy telefondagi kamera tekshiruvi migratsiya o‘rnatilgandan keyin alohida bajariladi.
+
+## Lavozim yaratishda umumiy xato chiqsa
+
+`manage-members` Edge Function’ning yangi kodi 24 belgili, katta-kichik harf, raqam va maxsus belgini kafolatlaydigan parollar yaratadi. Qat’iy Auth parol siyosati yoqilgan loyihalarda ham shu sinflar bajariladi. Avvalgi generator maxsus belgi yaratmagan.
+
+Funksiya Auth xatosini endi `error_code` bilan qaytaradi; frontend uni `[weak_password]`, `[unexpected_failure]` kabi ko‘rsatadi. Xato sababini faqat kod yoki tegishli Auth logi tasdiqlaydi. Hech qanday parol, token yoki admin kaliti logga yozilmaydi.
+
+**GitHub/Vercel deployi Supabase Edge Function kodini yangilamaydi.** Supabase → Edge Functions → `manage-members` → kod tahrirlash oynasida repozitoriydagi `supabase/functions/manage-members/index.ts` matnini to‘liq yangilang va Deploy qiling. CLI ishlatilsa, yuqoridagi `functions deploy` buyrug‘ini qayta bajaring.
+
+Agar Logs’da `No logs queries` yozilsa, bu loglar bo‘shligini tasdiqlamaydi: avval Logs → New/Create query ochib, quyidagini bajaring (bu oddiy SQL Editor uchun emas):
+
+```sql
+select timestamp, event_message
+from auth_logs
+order by timestamp desc
+limit 20;
+```
+
+Hisob yaratishni qayta sinab, log so‘rovini yangilang. `/admin/users` amali yoki bazaga yozish bilan bog‘liq xato kerak bo‘ladi. `unexpected_failure` bo‘lsa, eski Auth triggerlari yoki ruxsatlar kabi aniq sababni shu logdan aniqlang; noma’lum triggerlarni ko‘r-ko‘rona o‘chirmang.

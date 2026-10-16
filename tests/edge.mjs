@@ -3,8 +3,8 @@ import {transform} from 'esbuild';
 import vm from 'node:vm';
 import {webcrypto} from 'node:crypto';
 import assert from 'node:assert/strict';
-let role='director',count=2,created=null,reset=null;
-const client={auth:{getUser:async token=>({data:{user:token==='invalid'?null:{id:'actor'}},error:null}),admin:{createUser:async data=>{created=data;return {data:{user:{id:'created-id'}},error:null}},updateUserById:async(id,data)=>{reset={id,...data};return {error:null}}}},from:()=>({select:(_columns,options)=>{
+let role='director',count=2,created=null,reset=null,authError=null;
+const client={auth:{getUser:async token=>({data:{user:token==='invalid'?null:{id:'actor'}},error:null}),admin:{createUser:async data=>{created=data;return authError?{data:{user:null},error:authError}:{data:{user:{id:'created-id'}},error:null}},updateUserById:async(id,data)=>{reset={id,...data};return {error:authError}}}},from:()=>({select:(_columns,options)=>{
  if(options?.count)return Promise.resolve({count,error:null});
  return {eq:(_column,value)=>({single:async()=>value==='actor'?{data:{app_role:role},error:null}:{data:{id:value,login:'xodim01',position:'Muhandis',status:'pending',app_role:value==='director-id'?'director':'employee'},error:null}})};
 }})};
@@ -12,7 +12,7 @@ let handler;
 let source=await readFile(new URL('../supabase/functions/manage-members/index.ts',import.meta.url),'utf8');
 source=source.replace("import { createClient } from 'npm:@supabase/supabase-js@2.118.0';",'const createClient=()=>__client;');
 const code=(await transform(source,{loader:'ts',format:'iife'})).code;
-vm.runInNewContext(code,{__client:client,Request,Response,crypto:webcrypto,Deno:{env:{get:()=> 'fixture-only'},serve:fn=>{handler=fn}}});
+vm.runInNewContext(code,{__client:client,console:{error:()=>{}},Request,Response,crypto:webcrypto,Deno:{env:{get:()=> 'fixture-only'},serve:fn=>{handler=fn}}});
 const request=async(token,body,method='POST')=>handler(new Request('https://fixture.test',{method,headers:token?{Authorization:'Bearer '+token,'Content-Type':'application/json'}:{'Content-Type':'application/json'},body:method==='POST'?JSON.stringify(body):undefined}));
 assert.equal((await request(null,{})).status,401);
 assert.equal((await request('invalid',{})).status,401);
@@ -20,8 +20,17 @@ role='employee';assert.equal((await request('employee',{action:'create',position
 role='director';count=10;assert.equal((await request('director',{action:'create',position:'Prorab'})).status,409);assert.equal(created,null);
 count=2;assert.equal((await request('director',{action:'create',position:' '})).status,400);
 const response=await request('director',{action:'create',position:'Muhandis',app_role:'director'});assert.equal(response.status,200);
-const result=await response.json();assert.equal(created.app_metadata.themelio_role,'employee');assert.equal(created.app_metadata.position,'Muhandis');assert.equal(created.email_confirm,true);assert.equal(created.password.length,18);assert.match(created.password,/^[A-Za-z2-9]+$/);assert.equal(result.password,created.password);assert.equal(response.headers.get('Cache-Control'),'no-store');
+const result=await response.json();assert.equal(created.app_metadata.themelio_role,'employee');assert.equal(created.app_metadata.position,'Muhandis');assert.equal(created.email_confirm,true);assert.equal(created.password.length,24);for(const pattern of [/[A-Z]/,/[a-z]/,/[0-9]/,/[^A-Za-z0-9]/])assert.match(created.password,pattern);assert.equal(result.password,created.password);assert.equal(response.headers.get('Cache-Control'),'no-store');
 assert.equal((await request('director',{action:'reset-password',id:'director-id'})).status,404);assert.equal(reset,null);
-const resetResponse=await request('director',{action:'reset-password',id:'employee-id'});assert.equal(resetResponse.status,200);assert.equal(reset.id,'employee-id');assert.equal(reset.password.length,18);
+const resetResponse=await request('director',{action:'reset-password',id:'employee-id'});assert.equal(resetResponse.status,200);assert.equal(reset.id,'employee-id');assert.equal(reset.password.length,24);for(const pattern of [/[A-Z]/,/[a-z]/,/[0-9]/,/[^A-Za-z0-9]/])assert.match(reset.password,pattern);
 assert.equal((await request(null,{},'OPTIONS')).status,200);
-console.log('Edge handler tests passed with mocked Auth Admin API: missing/invalid JWT, employee denial, 10-seat preflight, fixed employee role, password creation, director reset denial, employee reset and no-store responses.');
+for(const code of ['weak_password','unexpected_failure','email_address_invalid']){
+ authError={code,status:code==='unexpected_failure'?500:422};
+ const response=await request('director',{action:'create',position:'Prorab'}),data=await response.json();
+ assert.equal(data.error_code,code);assert(data.request_id);assert(!JSON.stringify(data).includes(created.password));assert(response.status>=400);
+}
+authError={code:'weak_password',status:422};
+assert.equal((await (await request('director',{action:'reset-password',id:'employee-id'})).json()).error_code,'weak_password');
+authError=null;
+assert.equal((await request('director',null)).status,400);
+console.log('Edge handler tests passed with mocked Auth Admin API: missing/invalid JWT, employee denial, 10-seat preflight, fixed employee role, password creation, director reset denial, employee reset, strict password policy, actionable Auth errors, invalid request validation and no-store responses.');
