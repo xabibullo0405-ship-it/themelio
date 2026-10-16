@@ -26,11 +26,11 @@ Natijada `status = Baza tayyor`, `accounts` va `director_accounts` chiqadi. `dir
 
 Supabase Dashboard → loyihangiz → **SQL Editor → New query**.
 
-`supabase/migrations/202610150001_initial.sql` faylining to‘liq matnini ko‘chirib, **Run** bosing. Keyin alohida so‘rovda `supabase/migrations/202610150002_report_photos.sql` faylini bajaring. Agar birinchi migratsiya oldin bajarilgan bo‘lsa, uni qaytarmang — faqat ikkinchisini bajaring. Bu bir martalik, tranzaksiyali migratsiya. Shu nomdagi jadvallar oldin bo‘lsa, ustiga qayta ishga tushirmang; holatni avval tekshiring.
+`supabase/migrations/202610150001_initial.sql` faylining to‘liq matnini ko‘chirib, **Run** bosing. Keyin alohida so‘rovda `supabase/migrations/202610150002_report_photos.sql` faylini bajaring. So‘ng `supabase/migrations/202610160001_fix_auth_metadata_timing.sql` faylini bajaring. Oldin bajarilgan migratsiyalarni takrorlash shart emas. Bu bir martalik, tranzaksiyali migratsiya. Shu nomdagi jadvallar oldin bo‘lsa, ustiga qayta ishga tushirmang; holatni avval tekshiring.
 
 Migratsiya Auth foydalanuvchisi yaratilganda `members` yozuvini avtomatik yaratadigan trigger o‘rnatadi. `app_role` va `position` faqat administrator bergan `app_metadata`dan olinadi. Oddiy signup yoki profil formasi direktor rolini bera olmaydi.
 
-Authentication sozlamalarida Email/Password kirishini yoqing, ochiq **Allow new users to sign up** ni o‘chiring. Hisoblarni direktor/server admin yaratadi; xodimlar o‘zlari ochiq ro‘yxatdan o‘tmaydi. Trigger ham ruxsatsiz signupni rad etadi.
+Authentication sozlamalarida Email/Password kirishini yoqing, ochiq **Allow new users to sign up** ni o‘chiring. Hisoblarni direktor/server admin yaratadi; xodimlar o‘zlari ochiq ro‘yxatdan o‘tmaydi. Ishonchli app_metadata roli bo‘lmagan Auth hisobiga ilova profili va ma’lumot ruxsatlari berilmaydi.
 
 ## 2. Server funksiyasini joylashtiring
 
@@ -157,3 +157,11 @@ SQL Editor’da `scripts/diagnose-auth-create.sql` faylini to‘liq bajaring. Bu
 Results’da `error_code`, `error_message`, `error_function` va Auth trigger funksiyalarining nomlari ko‘rinadi. SQL satrlari, yozuv tafsilotlari va parol xeshlari qaytarilmaydi. `OK` natijasi faqat tekshirilgan DB yozish yo‘li muvaffaqiyatli bo‘lganini bildiradi; Auth Admin API’ning boshqa bosqichlari uchun haqiqiy Auth logi kerak. Boshqa natija qaysi trigger/jadval/ruxsatni tuzatish kerakligini aniqlashga yordam beradi. Noma’lum triggerlarni taxmin bilan o‘chirmang.
 
 SQL Editor `permission denied to set role "supabase_auth_admin"` qaytarsa, bu diagnostikaning rol almashtirishi rad etilganidir; u asl Auth xatosining sababi emas. Diagnostikaning yangi versiyasi bunday holatda SQL Editor roli bilan davom etadi va natijada Auth rolidagi ruxsatlar tekshirilmaganini alohida yozadi. Asl xatoni Logs Explorer’dagi `auth_logs` orqali aniqlang.
+
+## Tasdiqlangan Auth trigger xatosi: `Themelio accounts must be created by an administrator`
+
+Supabase Auth Admin API yangi userni avval oddiy provider app_metadata bilan INSERT qiladi, keyin custom app_metadata’ni UPDATE qiladi. Eski AFTER INSERT trigger custom rol hali yozilmagan paytda xato qaytargan. Bu holat rasmiy Auth kodining `internal/api/admin.go` faylidagi `adminUserCreate` tartibida ham ko‘rinadi.
+
+**Tuzatish:** SQL Editor’da `supabase/migrations/202610160001_fix_auth_metadata_timing.sql` faylini to‘liq bajaring. Bu mavjud hisoblar, parollar yoki hisobotlarni o‘chirmaydi. Yangi trigger AFTER INSERT va AFTER UPDATE OF raw_app_meta_data’da ishlaydi. Ishonchli rol bo‘lmasa, Auth yozuviga ruxsat beradi, ammo ilova profili yaratmaydi. Faqat server boshqaradigan app_metadata’da employee/director roli mavjud bo‘lganda membership yaratiladi; user_metadata’dan rol olinmaydi. Rolsiz hisoblar direktor profili yoki boshqa ilova ma’lumotlarini o‘qiy olmaydi. Qayta UPDATE profilni takror yaratmaydi va 10 hisob limiti saqlanadi.
+
+SQL muvaffaqiyatli bajarilgach saytda lavozim yaratishni qayta sinang. Avval yangilangan Edge Function kodini bu tuzatish uchun yana o‘zgartirish shart emas. Yangi o‘rnatishlarda shu uchinchi migratsiya ham bajarilishi kerak. `repair-schema.sql` ham ushbu tuzatishni o‘z ichiga oladi.

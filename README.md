@@ -17,7 +17,7 @@ Ishchi papka: `/workspace/themelio`. Production: `npm run build`, natija `dist/`
 
 **[SUPABASE_SETUP.md](SUPABASE_SETUP.md)** qo‘llanmasini bajaring:
 
-1. SQL Editor’da `supabase/migrations/202610150001_initial.sql` migratsiyasini bajaring, so‘ng `supabase/migrations/202610150002_report_photos.sql` migratsiyasini bajaring.
+1. SQL Editor’da `supabase/migrations/202610150001_initial.sql` migratsiyasini, keyin `202610150002_report_photos.sql` va `202610160001_fix_auth_metadata_timing.sql` migratsiyalarini ketma-ket bajaring. Barchasi `supabase/migrations/` papkasida.
 2. `supabase/functions/manage-members/index.ts` Edge Function’ni joylashtiring.
 3. Server kaliti bilan `npm run provision` bajarib 1 direktor + 9 xodim hisobini yarating. Parollar faqat Git’dan chiqarilgan `.private/` fayliga yoziladi.
 4. Saytda login, profil, hisobot yuborish va tasdiqlashni ikki qurilmada tekshiring.

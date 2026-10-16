@@ -12,6 +12,7 @@ create function extensions.gen_salt(text) returns text language sql as $$select 
 create function extensions.crypt(text,text) returns text language sql as $$select 'fixture-hash-'||$1$$;
 `);
 await db.exec(await readFile('supabase/migrations/202610150001_initial.sql','utf8'));
+await db.exec(await readFile('supabase/migrations/202610160001_fix_auth_metadata_timing.sql','utf8'));
 const script=await readFile('scripts/create-director.sql','utf8');
 let result=await db.exec(script);
 const row=result.at(-1).rows[0];assert.equal(row.login,'direktor');assert.equal(row.new_password.length,48);

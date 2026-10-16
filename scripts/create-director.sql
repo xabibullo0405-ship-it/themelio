@@ -57,7 +57,7 @@ begin
    email_change_token_current=coalesce(u.email_change_token_current,''),
    reauthentication_token=coalesce(u.reauthentication_token,''),updated_at=now()
   where u.id=v_user_id;
-  insert into public.members(id,login,app_role,position) values(v_user_id,'direktor','director','Direktor');
+  insert into public.members(id,login,app_role,position) values(v_user_id,'direktor','director','Direktor') on conflict(id) do nothing;
  end if;
  if not exists(select 1 from auth.identities i where i.user_id=v_user_id and i.provider='email') then
   insert into auth.identities(id,provider_id,user_id,identity_data,provider,created_at,updated_at)
