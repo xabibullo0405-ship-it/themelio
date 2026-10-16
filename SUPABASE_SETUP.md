@@ -149,3 +149,9 @@ limit 20;
 ```
 
 Hisob yaratishni qayta sinab, log so‘rovini yangilang. `/admin/users` amali yoki bazaga yozish bilan bog‘liq xato kerak bo‘ladi. `unexpected_failure` bo‘lsa, eski Auth triggerlari yoki ruxsatlar kabi aniq sababni shu logdan aniqlang; noma’lum triggerlarni ko‘r-ko‘rona o‘chirmang.
+
+## `Database error creating new user` diagnostikasi
+
+SQL Editor’da `scripts/diagnose-auth-create.sql` faylini to‘liq bajaring. Bu administrator uchun vaqtinchalik diagnostika: Auth serverining `supabase_auth_admin` roli bilan xodim va email identity yozishni tekshiradi, triggerlarni ishga tushiradi va barcha sinov yozuvlarini subtranzaksiyada **bekor qiladi**. Triggerlar o‘chirilmaydi, mavjud hisoblar/parollar o‘zgarmaydi.
+
+Results’da `error_code`, `error_message`, `error_function` va Auth trigger funksiyalarining nomlari ko‘rinadi. SQL satrlari, yozuv tafsilotlari va parol xeshlari qaytarilmaydi. `OK` natijasi faqat tekshirilgan DB yozish yo‘li muvaffaqiyatli bo‘lganini bildiradi; Auth Admin API’ning boshqa bosqichlari uchun haqiqiy Auth logi kerak. Boshqa natija qaysi trigger/jadval/ruxsatni tuzatish kerakligini aniqlashga yordam beradi. Noma’lum triggerlarni taxmin bilan o‘chirmang.
