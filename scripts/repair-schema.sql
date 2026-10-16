@@ -3,6 +3,12 @@
 -- Replaces only this app's named functions, trigger and policies; no DROP TABLE or CASCADE.
 -- Includes core schema, camera Storage and the two-stage Auth metadata timing fix.
 begin;
+-- Never replace newer workflow security helpers with the older recovery schema.
+do $$begin
+ if exists(select 1 from information_schema.columns where table_schema='public' and table_name='members' and column_name='employment_status') then
+  raise exception 'Management workflows already installed; do not run the legacy repair script. No changes applied.';
+ end if;
+end $$;
 -- Themelio: one company, up to 10 accounts (one director and nine employees).
 create table if not exists public.members (
  id uuid primary key references auth.users(id) on delete cascade,

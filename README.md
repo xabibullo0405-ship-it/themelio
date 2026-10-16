@@ -17,7 +17,7 @@ Ishchi papka: `/workspace/themelio`. Production: `npm run build`, natija `dist/`
 
 **[SUPABASE_SETUP.md](SUPABASE_SETUP.md)** qo‘llanmasini bajaring:
 
-1. SQL Editor’da `supabase/migrations/202610150001_initial.sql` migratsiyasini, keyin `202610150002_report_photos.sql` va `202610160001_fix_auth_metadata_timing.sql` migratsiyalarini ketma-ket bajaring. Barchasi `supabase/migrations/` papkasida.
+1. SQL Editor’da `supabase/migrations/202610150001_initial.sql` migratsiyasini, keyin `202610150002_report_photos.sql` va `202610160001_fix_auth_metadata_timing.sql` va `202610160002_management_workflows.sql` migratsiyalarini ketma-ket bajaring. Barchasi `supabase/migrations/` papkasida.
 2. `supabase/functions/manage-members/index.ts` Edge Function’ni joylashtiring.
 3. Server kaliti bilan `npm run provision` bajarib 1 direktor + 9 xodim hisobini yarating. Parollar faqat Git’dan chiqarilgan `.private/` fayliga yoziladi.
 4. Saytda login, profil, hisobot yuborish va tasdiqlashni ikki qurilmada tekshiring.
@@ -31,18 +31,21 @@ Eski mahalliy brauzer hisoblari serverga avtomatik ko‘chirilmaydi. Supabase o�
 - Supabase login/parol va sessiya; rol bazadan aniqlanadi.
 - Jami 10 hisob chegarasi, direktor boshqaradigan lavozim va login-parol yaratish.
 - Xodim profilini o‘zi to‘ldiradi; yakunlangach direktor ro‘yxatida ko‘rinadi.
-- Ertalabki/yakuniy hisobotlar, faqat kamerada olingan rasmlar (5 tagacha), sana filtri, direktor tasdig‘i va CSV eksport. Rasmlar yopiq Supabase Storage bucketida saqlanadi.
-- Direktor topshiriq biriktiradi, xodim bajarilish foizini yangilaydi.
+- Ertalabki/yakuniy hisobotlar, faqat kamerada olingan rasmlar (5 tagacha), sana filtri, direktor tasdig‘i yoki sabab bilan bekor qilish, rasmlar bilan PDF eksport. Rasmlar yopiq Supabase Storage bucketida saqlanadi.
+- Direktor obyekt yaratadi, xodimga obyekt biriktiradi; topshiriq yaratadi, tahrirlaydi va o‘chiradi. Xodim bajarilish foizini yangilaydi.
+- Xodimni ishdan bo‘shatish, qaytarish va profilini o‘chirish; tarixiy hisobotlar saqlanadi.
+- Sotuvchi kabinetida sotuv yaratish/tahrirlash, xaridor, kvartira, tushgan to‘lov va qarzdorlik. Direktor ham sotuvlarni boshqaradi.
 - Direktorning xodimga xabar yuborishi, xabarlar uchun bazada shaxsiy ruxsatlar.
 - Mobil ko‘rinish, qidiruv, arxiv, profil, bildirishnomalar.
 
-Galereyadan rasm tanlash yo‘q. PDF yuklash, obyektlar va sotuvlarni serverda boshqarish hali ulanmagan.
+Galereyadan rasm tanlash yo‘q. PDF uchun Unicode shriftlar ilovaga kiritilgan; litsenziya `src/assets/DejaVu-LICENSE.txt` ichida.
 
 ## Testlar
 
 ```sh
 npm run test:db
 npm run test:edge
+npm run test:pdf
 # Dev server 3000-portda ishlab turgan bo‘lishi kerak:
 BROWSER_PATH=/usr/bin/chromium npm run test:ui
 npm run build

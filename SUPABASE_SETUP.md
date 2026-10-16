@@ -3,6 +3,25 @@
 Loyiha: `pumkmcpekrbshcvfojim`.
 Frontend uchun to‘g‘ri URL: `https://pumkmcpekrbshcvfojim.supabase.co` — `/rest/v1/` qo‘shimchasisiz.
 
+## Ishlayotgan saytga yangi imkoniyatlarni o‘rnatish
+
+Oldingi uch migratsiya bajarilgan bo‘lsa, ularni qaytarmang:
+
+1. SQL Editor → New query’da **`supabase/migrations/202610160002_management_workflows.sql`** faylini to‘liq bajaring. Hisoblar va hisobotlar saqlanadi. Bu bir martalik migratsiya.
+2. Edge Functions → `manage-members` → Code → `index.ts` ichidagi kodni repozitoriydagi **`supabase/functions/manage-members/index.ts`** bilan to‘liq almashtiring va **Deploy updates** bosing. Avval SQL, keyin Edge Function.
+3. Vercel yangi Git commitni deploy qilgach saytni yangilang. Obyekt yarating, xodim profilida obyekt biriktiring, Sotuvchi lavozimini yarating.
+
+Yangi migratsiya bajarilmaguncha sayt ko‘rsatma chiqaradi va yangi boshqaruv amallarini bloklaydi. Git push Supabase SQL yoki Edge Function’ni avtomatik o‘rnatmaydi.
+
+- **Obyektlar:** yaratish, tahrirlash va xodimga biriktirish. Yangi hisobot xodimning shu paytdagi obyektiga yoziladi; eski hisobotlar o‘z-o‘zidan yangi obyektga ko‘chmaydi.
+- **Xodimlar:** ishdan bo‘shatish kirish huquqlarini bazada ham bekor qiladi; qayta ishga olish mumkin. Profilni o‘chirish shaxsiy maydonlarni tozalaydi va kirishni bloklaydi, tarixiy hisobot/topshiriq yozuvlarini saqlaydi. Auth foydalanuvchisi fizik o‘chirilmaydi; eski login orqali autentifikatsiya bo‘lsa ham ma’lumotlarga ruxsat yo‘q. O‘chirilgan profil tiklanmaydi va 10 hisob limitida joy bo‘shatadi; bo‘shatilgan profil joy egallashda davom etadi.
+- **Topshiriqlar:** tahrirlash, mas’ulni almashtirish va tasdiq bilan o‘chirish.
+- **Hisobotlar:** tekshirilayotgan hisobotni tasdiqlash yoki majburiy sabab bilan bekor qilish. Sabab xodimga ko‘rinadi. Qaror qayta o‘zgartirilmaydi; xodim tuzatilgan yangi hisobot yuborishi mumkin.
+- **PDF:** bitta yoki filtrlangan hisobotlarni barcha rasmlari bilan haqiqiy PDFga yuklash. Rasm yuklanmasa tugallanmagan PDF chiqarilmaydi. Yopiq rasmlarga vaqtinchalik havolalar 10 daqiqagacha amal qiladi; bo‘shatish ilgari berilgan havolani muddatidan oldin bekor qilmaydi.
+- **Sotuvchi:** Sotuvlar kabinetida obyekt, kvartira, xaridor, narx va tushgan to‘lovni kiritadi; o‘z sotuvlarini tahrirlaydi. Direktor barcha sotuvlarni boshqaradi. Oddiy xodim sotuv ma’lumotlarini o‘qiy olmaydi.
+
+Boshqaruv migratsiyasidan keyin eski `repair-schema.sql` ishlatilmaydi: u yangi ruxsatlarni eski versiyaga tushirmaslik uchun to‘xtaydi.
+
 ## Hozir nima tayyor?
 
 - Sayt Supabase Auth orqali login/parol bilan kiradi. Direktor yoki xodim kabineti bazadagi rol bo‘yicha ochiladi.
@@ -18,7 +37,7 @@ Frontend uchun to‘g‘ri URL: `https://pumkmcpekrbshcvfojim.supabase.co` — `
 
 ## Qisman o‘rnatilgan bazani tiklash
 
-Agar `function "is_director" already exists` yoki oldingi bajarishda `public.members does not exist` xatosi chiqqan bo‘lsa, SQL Editor’da **yangi so‘rov** oching va `scripts/repair-schema.sql` faylini to‘liq bajaring. Unda asosiy jadvallar ham, kamera rasmlari uchun Storage sozlamalari ham bor. Mavjud hisob va hisobot yozuvlari o‘chirilmaydi; faqat Themelio’ning nomlangan funksiyalari, triggeri va siyosatlari qayta o‘rnatiladi. Ushbu sxemada faylni qayta bajarish mumkin.
+Agar `function "is_director" already exists` yoki oldingi bajarishda `public.members does not exist` xatosi chiqqan bo‘lsa, SQL Editor’da **yangi so‘rov** oching va `scripts/repair-schema.sql` faylini to‘liq bajaring. Unda asosiy jadvallar ham, kamera rasmlari uchun Storage sozlamalari ham bor. Mavjud hisob va hisobot yozuvlari o‘chirilmaydi; faqat Themelio’ning nomlangan funksiyalari, triggeri va siyosatlari qayta o‘rnatiladi. Boshqaruv migratsiyasi o‘rnatilmagan sxemada faylni qayta bajarish mumkin. Tiklashdan keyin yangi `202610160002_management_workflows.sql` migratsiyasini ham bajaring.
 
 Natijada `status = Baza tayyor`, `accounts` va `director_accounts` chiqadi. `director_accounts = 0` bo‘lsa, direktor hisobi hali yo‘q: parolni yangilash skripti hisob yaratmaydi. Hisob yaratish bosqichini bajaring. Bu tiklash usuli ma’lum Themelio sxemasi uchun; bir xil nomli, boshqa tuzilishdagi jadvallar bo‘lsa, ularni o‘chirmang va xatoni tekshiring.
 
@@ -26,7 +45,7 @@ Natijada `status = Baza tayyor`, `accounts` va `director_accounts` chiqadi. `dir
 
 Supabase Dashboard → loyihangiz → **SQL Editor → New query**.
 
-`supabase/migrations/202610150001_initial.sql` faylining to‘liq matnini ko‘chirib, **Run** bosing. Keyin alohida so‘rovda `supabase/migrations/202610150002_report_photos.sql` faylini bajaring. So‘ng `supabase/migrations/202610160001_fix_auth_metadata_timing.sql` faylini bajaring. Oldin bajarilgan migratsiyalarni takrorlash shart emas. Bu bir martalik, tranzaksiyali migratsiya. Shu nomdagi jadvallar oldin bo‘lsa, ustiga qayta ishga tushirmang; holatni avval tekshiring.
+`supabase/migrations/202610150001_initial.sql` faylining to‘liq matnini ko‘chirib, **Run** bosing. Keyin alohida so‘rovda `supabase/migrations/202610150002_report_photos.sql` faylini bajaring. So‘ng `supabase/migrations/202610160001_fix_auth_metadata_timing.sql` faylini bajaring. Oxirida `supabase/migrations/202610160002_management_workflows.sql` faylini bajaring. Oldin bajarilgan migratsiyalarni takrorlash shart emas. Bu bir martalik, tranzaksiyali migratsiya. Shu nomdagi jadvallar oldin bo‘lsa, ustiga qayta ishga tushirmang; holatni avval tekshiring.
 
 Migratsiya Auth foydalanuvchisi yaratilganda `members` yozuvini avtomatik yaratadigan trigger o‘rnatadi. `app_role` va `position` faqat administrator bergan `app_metadata`dan olinadi. Oddiy signup yoki profil formasi direktor rolini bera olmaydi.
 
